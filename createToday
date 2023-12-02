@@ -1,0 +1,43 @@
+#!/bin/bash
+
+YEAR=$(date +"%Y")
+DAY=$(date +"%-d")
+LANGS=("cpp" "go" "rs")
+
+create_files() {
+	for LANG in "${LANGS[@]}"; do
+		FILE="${YEAR}/d${DAY}.${LANG}"
+		if [ ! -f "$FILE" ]; then
+			echo "Creating file $FILE..."
+			touch "$FILE"
+		else
+			echo "File $FILE already exists."
+		fi
+	done
+
+	EXAMPLE="${YEAR}/examples/e${DAY}"
+	if [ ! -f "$EXAMPLE" ]; then
+		echo "Creating example file $EXAMPLE..."
+		touch "$EXAMPLE"
+	else
+		echo "Example file $EXAMPLE already exists."
+	fi
+
+	INPUT="${YEAR}/inputs/d${DAY}p1"
+	if [ ! -f "$INPUT" ]; then
+		echo "Creating input file $INPUT..."
+		touch "$INPUT"
+	else
+		echo "Input file $INPUT already exists."
+	fi
+
+	INPUT="${YEAR}/inputs/d${DAY}p2"
+	if [ ! -f "$INPUT" ]; then
+		echo "Creating input file $INPUT..."
+		touch "$INPUT"
+	else
+		echo "Input file $INPUT already exists."
+	fi
+}
+
+create_files
