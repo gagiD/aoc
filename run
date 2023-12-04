@@ -3,7 +3,7 @@
 YEAR=$(date +"%Y")
 DAY=$(date +"%-d")
 LANG="cpp"
-INPUT_TYPE="e"
+INPUT_TYPE="e1"
 
 while getopts "y:d:l:i:" opt; do
 	case $opt in
@@ -18,14 +18,16 @@ while getopts "y:d:l:i:" opt; do
 	esac
 done
 
-if [ "$INPUT_TYPE" = "e" ]; then
-	INPUT_PATH="${YEAR}/examples/e${DAY}"
-elif [ "$INPUT_TYPE" = "p1" ]; then
-	INPUT_PATH="${YEAR}/inputs/d${DAY}p1"
-elif [ "$INPUT_TYPE" = "p2" ]; then
-	INPUT_PATH="${YEAR}/inputs/d${DAY}p2"
+if [ "$INPUT_TYPE" = "e1" ]; then
+	INPUT_PATH="${YEAR}/examples/d${DAY}e1"
+elif [ "$INPUT_TYPE" = "e2" ]; then
+	INPUT_PATH="${YEAR}/examples/d${DAY}e2"
+elif [ "$INPUT_TYPE" = "i1" ]; then
+	INPUT_PATH="${YEAR}/inputs/d${DAY}i1"
+elif [ "$INPUT_TYPE" = "i2" ]; then
+	INPUT_PATH="${YEAR}/inputs/d${DAY}i2"
 else
-	echo "Invalid input type. Use 'e', 'p1', or 'p2'."
+	echo "Invalid input type. Use 'e1' or 'e2', 'i1', or 'i2'."
 	exit 1
 fi
 
@@ -53,7 +55,7 @@ buildAndRun() {
 
 	if [ -f "$EXECUTABLE" ]; then
 		./"$EXECUTABLE" <"$INPUT_PATH"
-		printf "_____________________________\n"
+		printf "\n_____________________________\n"
 	else
 		echo "Executable not found for day $DAY."
 		exit 1
@@ -63,7 +65,9 @@ buildAndRun() {
 buildAndRun
 
 while true; do
-	inotifywait -q -e modify "${YEAR}/d${DAY}.${LANG}"
+	inotifywait -q -e modify "${YEAR}/d${DAY}.${LANG}" \
+		"${YEAR}/inputs/d${DAY}i1" "${YEAR}/inputs/d${DAY}i2" \
+		"${YEAR}/examples/d${DAY}e1" "${YEAR}/examples/d${DAY}e1"
 	echo "File change detected. Rebuilding and running..."
 	buildAndRun
 done

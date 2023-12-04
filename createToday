@@ -4,6 +4,17 @@ YEAR=$(date +"%Y")
 DAY=$(date +"%-d")
 LANGS=("cpp" "go" "rs")
 
+while getopts "y:d:l:i:" opt; do
+	case $opt in
+	y) YEAR=$OPTARG ;;
+	d) DAY=$OPTARG ;;
+	\?)
+		echo "Invalid option: -$OPTARG" >&2
+		exit 1
+		;;
+	esac
+done
+
 create_files() {
 	for LANG in "${LANGS[@]}"; do
 		FILE="${YEAR}/d${DAY}.${LANG}"
@@ -15,7 +26,14 @@ create_files() {
 		fi
 	done
 
-	EXAMPLE="${YEAR}/examples/e${DAY}"
+	EXAMPLE="${YEAR}/examples/d${DAY}e1"
+	if [ ! -f "$EXAMPLE" ]; then
+		echo "Creating example file $EXAMPLE..."
+		touch "$EXAMPLE"
+	else
+		echo "Example file $EXAMPLE already exists."
+	fi
+	EXAMPLE="${YEAR}/examples/d${DAY}e2"
 	if [ ! -f "$EXAMPLE" ]; then
 		echo "Creating example file $EXAMPLE..."
 		touch "$EXAMPLE"
@@ -23,7 +41,7 @@ create_files() {
 		echo "Example file $EXAMPLE already exists."
 	fi
 
-	INPUT="${YEAR}/inputs/d${DAY}p1"
+	INPUT="${YEAR}/inputs/d${DAY}i1"
 	if [ ! -f "$INPUT" ]; then
 		echo "Creating input file $INPUT..."
 		touch "$INPUT"
@@ -31,7 +49,7 @@ create_files() {
 		echo "Input file $INPUT already exists."
 	fi
 
-	INPUT="${YEAR}/inputs/d${DAY}p2"
+	INPUT="${YEAR}/inputs/d${DAY}i2"
 	if [ ! -f "$INPUT" ]; then
 		echo "Creating input file $INPUT..."
 		touch "$INPUT"
