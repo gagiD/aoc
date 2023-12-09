@@ -40,6 +40,7 @@ buildAndRun() {
 	case $LANG in
 	"cpp")
 		g++ -o "$EXECUTABLE" "${YEAR}/d${DAY}.${LANG}"
+		clang++ -g -o "$EXECUTABLE-debug" "${YEAR}/d${DAY}.${LANG}"
 		;;
 	"go")
 		go build -o "$EXECUTABLE" "${YEAR}/d${DAY}.${LANG}"
