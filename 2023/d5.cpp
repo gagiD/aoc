@@ -16,12 +16,13 @@ struct SeedRange {
 };
 
 struct SeedMap {
+  const char *name;
   long destination;
   long source;
   long length;
 };
 
-void inputMap(vector<SeedMap> &map, istream &in) {
+void inputMap(const char *name, vector<SeedMap> &map, istream &in) {
   string line;
   long d, s, l;
   while (true) {
@@ -30,7 +31,7 @@ void inputMap(vector<SeedMap> &map, istream &in) {
       break;
     auto ss = istringstream{line};
     ss >> d >> s >> l;
-    map.push_back({d, s, l});
+    map.push_back({name, d, s, l});
   }
 }
 
@@ -43,8 +44,8 @@ long getNext(long s, const vector<SeedMap> &map) {
 }
 
 long traverse(const vector<long> &seeds, const vector<vector<SeedMap>> &maps) {
-  long sn = -1;
-  long min = numeric_limits<long long>::max();
+  long sn = 0;
+  long min = numeric_limits<long>::max();
 
   for (const auto &s : seeds) {
     sn = s;
@@ -64,47 +65,110 @@ vector<SeedRange> getNextRange(vector<SeedRange> &ranges,
                                const vector<SeedMap> &map) {
   std::vector<SeedRange> updatedRanges;
 
-  for (const auto &range : ranges) {
-    long start = range.start;
-    long length = range.length;
+  for (int ri = 0; ri < ranges.size(); ri++) {
+    const auto &range = ranges[ri];
+    long rangeStart = range.start;
+    long rangeEnd = range.start + range.length - 1;
 
-    for (const auto &mapping : map) {
-      if (start >= mapping.source && start < mapping.source + mapping.length) {
-        // Adjust the start position within the mapping
-        long offset = start - mapping.source;
-        start = mapping.destination + offset;
+    bool found = false;
+    for (int i = 0; i < map.size(); i++) {
+      const auto &mapping = map[i];
+      long sourceStart = mapping.source;
+      long sourceEnd = mapping.source + mapping.length - 1;
 
-        // Calculate the remaining length within the mapping
-        long remainingLength = mapping.length - offset;
+      long mStart = max(rangeStart, sourceStart);
+      long mEnd = min(rangeEnd, sourceEnd);
+      long mLength = mEnd - mStart + 1;
 
-        // Update the length considering the mapping length and remaining length
-        length = (length < remainingLength) ? length : remainingLength;
+      if (mLength > 0) {
+        found = true;
+
+        long roffset = mStart - mapping.destination;
+        long moffset = mapping.source - mapping.destination;
+
+        updatedRanges.push_back({mapping.destination + roffset - moffset, mLength});
       }
     }
 
-    updatedRanges.push_back({start, length});
+    if (!found) {
+      long length = range.length;
+
+      long maxStart = map.back().destination;
+      if (maxStart > range.start + length)
+        length = maxStart - range.start;
+
+      if (ri != ranges.size() - 1) {
+        const SeedRange &next = ranges[ri + 1];
+        if (next.start > range.start + length)
+          length = next.start - range.start;
+      }
+      if (length > 0)
+        updatedRanges.push_back({range.start, (long)length});
+      else if (length < 0)
+        updatedRanges.push_back({range.start, 1});
+    }
   }
 
   return updatedRanges;
 }
 
-long traverse2(const vector<long> &seeds, const vector<vector<SeedMap>> &maps) {
+long minRange(const vector<SeedRange> &ranges) {
+  long min = numeric_limits<long>::max();
+  for (const auto &r : ranges) {
+    if (r.start < min)
+      min = r.start;
+  }
+
+  return min;
+}
+
+long traverse2(const vector<long> &seeds, vector<vector<SeedMap>> &maps) {
   vector<SeedRange> seedRanges;
 
   for (int i = 0; i < seeds.size(); i += 2) {
     seedRanges.push_back({seeds[i], seeds[i + 1]});
   }
 
-  for (const auto &map : maps) {
-    seedRanges = getNextRange(seedRanges, map);
+  long mRange = numeric_limits<long>::max();
+  vector<SeedRange> currRanges;
+  for (const auto &r : seedRanges) {
+    currRanges = {r};
 
-    cout << "sRange\n";
-    for (const auto &r : seedRanges) {
-      cout << r.start << " " << r.length << endl;
+    for (auto &map : maps) {
+      cout << "\nsranges:" << endl;
+      for (const auto &r : currRanges)
+        cout << r.start << " " << r.length << endl;
+
+      currRanges = getNextRange(currRanges, map);
     }
+
+    cout << "\nsranges:" << endl;
+    for (const auto &r : currRanges)
+      cout << r.start << " " << r.length << endl;
+
+    auto cm = minRange(currRanges);
+    if (cm < mRange)
+      mRange = cm;
   }
 
-  return -1;
+  return mRange;
+}
+
+void prepareMaps(vector<vector<SeedMap>> &maps) {
+  for (auto &map : maps) {
+    sort(map.begin(), map.end(),
+         [](const auto &m1, const auto &m2) { return m1.source < m2.source; });
+
+    long start = 0;
+    for (int i = 0; i < map.size(); i++) {
+      if (map[i].source > start) {
+        map.insert(map.begin() + i,
+                   {map[i].name, start, start, map[i].source - start});
+        i++;
+      }
+      start = map[i].source + map[i].length;
+    }
+  }
 }
 
 int main() {
@@ -137,44 +201,48 @@ int main() {
 
   getline(cin, line);
   if (line == "seed-to-soil map:") {
-    inputMap(seedToSoil, cin);
+    inputMap("seed-to-soil", seedToSoil, cin);
   }
 
   getline(cin, line);
   if (line == "soil-to-fertilizer map:") {
-    inputMap(soilToFert, cin);
+    inputMap("soil-to-fert", soilToFert, cin);
   }
 
   getline(cin, line);
   if (line == "fertilizer-to-water map:") {
-    inputMap(fertToWater, cin);
+    inputMap("fert-to-water", fertToWater, cin);
   }
 
   getline(cin, line);
   if (line == "water-to-light map:") {
-    inputMap(waterToLight, cin);
+    inputMap("water-to-light", waterToLight, cin);
   }
 
   getline(cin, line);
   if (line == "light-to-temperature map:") {
-    inputMap(lightToTemp, cin);
+    inputMap("light-to-temp", lightToTemp, cin);
   }
 
   getline(cin, line);
   if (line == "temperature-to-humidity map:") {
-    inputMap(tempToHumid, cin);
+    inputMap("temp-to-humid", tempToHumid, cin);
   }
 
   getline(cin, line);
   if (line == "humidity-to-location map:") {
-    inputMap(humidToLoc, cin);
+    inputMap("humid-to-loc", humidToLoc, cin);
   }
 
   auto r = traverse(seeds, {seedToSoil, soilToFert, fertToWater, waterToLight,
                             lightToTemp, tempToHumid, humidToLoc});
   cout << "result:" << r << endl;
 
-  auto r2 = traverse2(seeds, {seedToSoil, soilToFert, fertToWater, waterToLight,
-                              lightToTemp, tempToHumid, humidToLoc});
+  vector<vector<SeedMap>> maps = {seedToSoil,   soilToFert,  fertToWater,
+                                  waterToLight, lightToTemp, tempToHumid,
+                                  humidToLoc};
+
+  prepareMaps(maps);
+  auto r2 = traverse2(seeds, maps);
   cout << "result2:" << r2 << endl;
 }
