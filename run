@@ -1,74 +1,74 @@
 #!/bin/sh
 
 YEAR=$(date +"%Y")
-DAY=$(date +"%-d")
+DAY=$(printf "%02d" "$(date +"%-d")")
 LANG="cpp"
 INPUT_TYPE="e1"
 
 while getopts "y:d:l:i:" opt; do
-	case $opt in
-	y) YEAR=$OPTARG ;;
-	d) DAY=$OPTARG ;;
-	l) LANG=$OPTARG ;;
-	i) INPUT_TYPE=$OPTARG ;;
-	\?)
-		echo "Invalid option: -$OPTARG" >&2
-		exit 1
-		;;
-	esac
+  case $opt in
+  y) YEAR=$OPTARG ;;
+  d) DAY=$(printf "%02d" "$OPTARG") ;;
+  l) LANG=$OPTARG ;;
+  i) INPUT_TYPE=$OPTARG ;;
+  \?)
+    echo "Invalid option: -$OPTARG" >&2
+    exit 1
+    ;;
+  esac
 done
 
 if [ "$INPUT_TYPE" = "e1" ]; then
-	INPUT_PATH="${YEAR}/examples/d${DAY}e1"
+  INPUT_PATH="${YEAR}/examples/d${DAY}e1"
 elif [ "$INPUT_TYPE" = "e2" ]; then
-	INPUT_PATH="${YEAR}/examples/d${DAY}e2"
+  INPUT_PATH="${YEAR}/examples/d${DAY}e2"
 elif [ "$INPUT_TYPE" = "i1" ]; then
-	INPUT_PATH="${YEAR}/inputs/d${DAY}i1"
+  INPUT_PATH="${YEAR}/inputs/d${DAY}i1"
 elif [ "$INPUT_TYPE" = "i2" ]; then
-	INPUT_PATH="${YEAR}/inputs/d${DAY}i2"
+  INPUT_PATH="${YEAR}/inputs/d${DAY}i2"
 else
-	echo "Invalid input type. Use 'e1' or 'e2', 'i1', or 'i2'."
-	exit 1
+  echo "Invalid input type. Use 'e1' or 'e2', 'i1', or 'i2'."
+  exit 1
 fi
 
 mkdir -p "build/${YEAR}"
 EXECUTABLE="build/${YEAR}/d${DAY}-${LANG}"
 
+SOURCE_FILE="${YEAR}/day${DAY}/main.${LANG}"
+
 buildAndRun() {
-	printf "Building executable for day $LANG $DAY...\n\n"
+  printf "Building executable for day $LANG $DAY...\n\n"
 
-	case $LANG in
-	"cpp")
-		g++ -o "$EXECUTABLE" "${YEAR}/d${DAY}.${LANG}"
-		clang++ -g --debug -o "$EXECUTABLE-debug" "${YEAR}/d${DAY}.${LANG}"
-		;;
-	"go")
-		go build -o "$EXECUTABLE" "${YEAR}/d${DAY}.${LANG}"
-		;;
-	"rs")
-		rustc -o "$EXECUTABLE" "${YEAR}/d${DAY}.${LANG}"
-		;;
-	*)
-		echo "Language $LANG not supported."
-		exit 1
-		;;
-	esac
+  case $LANG in
+  "cpp")
+    g++ -std=c++23 -o "$EXECUTABLE" "$SOURCE_FILE"
+    clang++ -std=c++23 -g --debug -o "$EXECUTABLE-debug" "$SOURCE_FILE"
+    ;;
+  "go")
+    go build -o "$EXECUTABLE" "$SOURCE_FILE"
+    ;;
+  "rs")
+    rustc -o "$EXECUTABLE" "$SOURCE_FILE"
+    ;;
+  *)
+    echo "Language $LANG not supported."
+    exit 1
+    ;;
+  esac
 
-	if [ -f "$EXECUTABLE" ]; then
-		./"$EXECUTABLE" <"$INPUT_PATH"
-		printf "\n_____________________________\n"
-	else
-		echo "Executable not found for day $DAY."
-		exit 1
-	fi
+  if [ -f "$EXECUTABLE" ]; then
+    ./"$EXECUTABLE" <"$INPUT_PATH"
+    printf "\n_____________________________\n"
+  else
+    echo "Executable not found for day $DAY."
+    exit 1
+  fi
 }
 
 buildAndRun
 
 while true; do
-	inotifywait -q -e modify "${YEAR}/d${DAY}.${LANG}" \
-		"${YEAR}/inputs/d${DAY}i1" "${YEAR}/inputs/d${DAY}i2" \
-		"${YEAR}/examples/d${DAY}e1" "${YEAR}/examples/d${DAY}e1"
-	echo "File change detected. Rebuilding and running..."
-	buildAndRun
+  inotifywait -q -e modify "$SOURCE_FILE" "$INPUT_PATH"
+  echo "File change detected. Rebuilding and running..."
+  buildAndRun
 done
